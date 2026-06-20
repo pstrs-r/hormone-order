@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบรับออเดอร์ห่อหมก</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#F7F7F5;color:#1A1A1A;font-size:15px}
+.container{max-width:600px;margin:0 auto;padding:16px}
+.app-header{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem;padding:16px;background:#fff;border-radius:12px;border:0.5px solid #E5E5E5}
+.app-logo{width:40px;height:40px;border-radius:50%;background:#E1F5EE;display:flex;align-items:center;justify-content:center;font-size:20px}
+.tab-bar{display:flex;border-bottom:0.5px solid #E5E5E5;margin-bottom:1.5rem;background:#fff;border-radius:12px 12px 0 0;overflow:hidden;border:0.5px solid #E5E5E5}
+.tab{flex:1;padding:12px 8px;font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;color:#6B6B6B;transition:all 0.15s;text-align:center;background:none;border-top:none;border-left:none;border-right:none}
+.tab.active{color:#1D9E75;border-bottom-color:#1D9E75}
+.page{display:none}.page.active{display:block}
+.card{background:#fff;border-radius:12px;border:0.5px solid #E5E5E5;padding:16px;margin-bottom:12px}
+label{display:block;font-size:13px;color:#6B6B6B;margin-bottom:6px;font-weight:600;margin-top:14px}
+input,select,textarea{width:100%;padding:10px 12px;border:0.5px solid #E5E5E5;border-radius:10px;font-size:14px;font-family:inherit;color:#1A1A1A;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#1D9E75}
+textarea{resize:vertical;height:72px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-card{border:0.5px solid #E5E5E5;border-radius:10px;padding:14px;cursor:pointer;background:#fff;transition:all 0.15s;text-align:center}
+.type-card.selected{border-color:#1D9E75;background:#E1F5EE}
+.type-card .tc-name{font-size:14px;font-weight:600;color:#1A1A1A}
+.type-card.selected .tc-name{color:#085041}
+.pkg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pkg-card{border:0.5px solid #E5E5E5;border-radius:10px;padding:12px;cursor:pointer;background:#fff;transition:all 0.15s;text-align:center}
+.pkg-card.selected{border-color:#534AB7;background:#EEEDFE}
+.pkg-card .pk-label{font-size:13px;color:#6B6B6B;font-weight:500}
+.pkg-card.selected .pk-label{color:#3C3489;font-weight:600}
+.qty-row{display:flex;align-items:center;gap:10px}
+.qty-btn{width:36px;height:36px;border-radius:10px;border:0.5px solid #E5E5E5;background:#fff;cursor:pointer;font-size:20px;display:flex;align-items:center;justify-content:center;color:#1A1A1A;flex-shrink:0}
+.qty-btn:hover{background:#F7F7F5}
+#qty-display{font-size:20px;font-weight:700;min-width:40px;text-align:center}
+#qty-input{width:70px;text-align:center}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+.submit-btn{width:100%;padding:13px;border:none;border-radius:12px;background:#1D9E75;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px;font-family:inherit}
+.submit-btn:hover{background:#0F6E56}
+.submit-btn.edit-mode{background:#534AB7}
+.submit-btn.edit-mode:hover{background:#3C3489}
+.cancel-btn{width:100%;padding:11px;border:0.5px solid #E5E5E5;border-radius:12px;background:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-top:8px;color:#6B6B6B;font-family:inherit;display:none}
+.cancel-btn:hover{background:#F7F7F5}
+.edit-banner{background:#EEEDFE;border:0.5px solid #AFA9EC;border-radius:10px;padding:11px 14px;margin-bottom:12px;display:none;font-size:13px;color:#3C3489;font-weight:600}
+.edit-banner.show{display:block}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;z-index:999;display:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.12)}
+.toast.success{background:#E1F5EE;color:#085041;display:block}
+.toast.error{background:#FCEBEB;color:#791F1F;display:block}
+.order-card{background:#fff;border:0.5px solid #E5E5E5;border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.order-card.editing{border-color:#534AB7;background:#EEEDFE}
+.order-info{flex:1;min-width:0}
+.order-main{font-size:14px;font-weight:600;margin-bottom:4px}
+.order-sub{font-size:12px;color:#6B6B6B;margin-top:2px}
+.order-actions{display:flex;gap:6px;flex-shrink:0}
+.act-btn{border:0.5px solid #E5E5E5;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;background:transparent;font-family:inherit;display:flex;align-items:center;gap:4px}
+.act-btn.edit{color:#534AB7;border-color:#AFA9EC;background:#EEEDFE}
+.act-btn.edit:hover{background:#d9d6f8}
+.act-btn.del{color:#A32D2D;border-color:#F7C1C1;background:#FCEBEB}
+.act-btn.del:hover{background:#f7d0d0}
+.list-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.clear-btn{border:0.5px solid #E5E5E5;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;color:#A32D2D;background:#fff;font-family:inherit}
+.empty{text-align:center;padding:3rem 1rem;color:#6B6B6B}
+.empty-icon{font-size:48px;display:block;margin-bottom:12px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav-btn{border:0.5px solid #E5E5E5;border-radius:8px;padding:6px 14px;background:#fff;cursor:pointer;font-size:18px;color:#1A1A1A}
+.cal-title{font-size:16px;font-weight:700}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:1rem}
+.cal-header{text-align:center;font-size:11px;color:#6B6B6B;padding:5px 2px;font-weight:600}
+.cal-day{border:0.5px solid #E5E5E5;border-radius:8px;padding:5px 3px;min-height:66px;cursor:pointer;background:#fff;transition:border-color 0.15s}
+.cal-day:hover{border-color:#1D9E75}
+.cal-day.other-month{opacity:0.3;pointer-events:none}
+.cal-day.today .day-num{color:#1D9E75;font-weight:700}
+.cal-day.selected{border-color:#1D9E75;background:#E1F5EE}
+.day-num{font-size:11px;color:#6B6B6B;margin-bottom:3px}
+.day-badge{font-size:9px;padding:2px 4px;border-radius:4px;margin-bottom:2px;font-weight:600;display:block}
+.badge-big{background:#EEEDFE;color:#3C3489}
+.badge-small{background:#E1F5EE;color:#085041}
+.day-count{font-size:9px;color:#6B6B6B;margin-top:1px}
+.detail-box{background:#fff;border:0.5px solid #E5E5E5;border-radius:12px;padding:16px;display:none;margin-top:4px}
+.detail-box.show{display:block}
+.detail-title{font-size:15px;font-weight:700;margin-bottom:14px}
+.sum-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.sum-card{border-radius:10px;padding:10px;text-align:center;background:#F7F7F5}
+.sum-label{font-size:11px;color:#6B6B6B;margin-bottom:4px}
+.sum-num{font-size:22px;font-weight:700}
+.section-title{font-size:11px;font-weight:700;color:#6B6B6B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;margin-top:4px}
+.time-block{border:0.5px solid #E5E5E5;border-radius:10px;padding:10px;margin-bottom:8px}
+.time-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.time-head-label{font-weight:600}
+.time-head-sum{color:#6B6B6B}
+.time-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-top:0.5px solid #E5E5E5}
+.pkg-block{border:0.5px solid #E5E5E5;border-radius:10px;overflow:hidden}
+.pkg-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:0.5px solid #E5E5E5;font-size:13px}
+.pkg-row:last-child{border-bottom:none}
+.list-summary{background:#fff;border:0.5px solid #E5E5E5;border-radius:12px;padding:14px 16px;margin-bottom:14px}
+.list-summary-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:0.5px solid #F1EFE8}
+.list-summary-row:last-child{border-bottom:none}
+.list-summary-total{font-size:15px;font-weight:700;color:#7A5600}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="app-header">
+    <div class="app-logo">🧺</div>
+    <div>
+      <div style="font-size:16px;font-weight:700">ระบบรับออเดอร์ห่อหมก</div>
+      <div style="font-size:12px;color:#6B6B6B">จัดการคำสั่งซื้อและสรุปยอดรายวัน</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('order')">➕ สั่งออเดอร์</button>
+    <button class="tab" onclick="switchTab('list')">📋 รายการ (<span id="list-count">0</span>)</button>
+    <button class="tab" onclick="switchTab('calendar')">📅 ปฏิทินยอด</button>
+  </div>
+
+  <!-- ORDER FORM -->
+  <div id="page-order" class="page active">
+    <div class="card">
+      <div class="edit-banner" id="edit-banner">✏️ กำลังแก้ไขออเดอร์ — แก้ไขข้อมูลแล้วกด "บันทึกการแก้ไข"</div>
+
+      <label>วันที่ส่ง</label>
+      <input type="date" id="delivery-date">
+
+      <label>เวลาส่ง</label>
+      <input type="time" id="delivery-time">
+
+      <label>ชื่อผู้สั่ง</label>
+      <input type="text" id="customer-name" placeholder="ระบุชื่อผู้สั่ง" required>
+
+      <label>ชนิดกระทง</label>
+      <div class="type-grid">
+        <div class="type-card selected" id="size-big" onclick="selectSize('big')">
+          <div class="tc-name">กระทงใหญ่</div>
+        </div>
+        <div class="type-card" id="size-small" onclick="selectSize('small')">
+          <div class="tc-name">กระทงเล็ก</div>
+        </div>
+      </div>
+
+      <label>ประเภทบรรจุภัณฑ์</label>
+      <div class="pkg-grid">
+        <div class="pkg-card selected" id="pkg-khantok" onclick="selectPkg('khantok')"><div class="pk-label">ขันโตก</div></div>
+        <div class="pkg-card" id="pkg-box-big" onclick="selectPkg('box-big')"><div class="pk-label">กล่องใหญ่</div></div>
+        <div class="pkg-card" id="pkg-box5" onclick="selectPkg('box5')"><div class="pk-label">กล่อง 5 กระทง</div></div>
+        <div class="pkg-card" id="pkg-box2" onclick="selectPkg('box2')"><div class="pk-label">กล่อง 2 กระทง</div></div>
+        <div class="pkg-card" id="pkg-other" onclick="selectPkg('other')" style="grid-column:1 / -1"><div class="pk-label">อื่นๆ</div></div>
+      </div>
+
+      <label>จำนวน</label>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="changeQty(-1)">−</button>
+        <span id="qty-display">1</span>
+        <button class="qty-btn" onclick="changeQty(1)">+</button>
+        <input type="text" id="qty-input" inputmode="numeric" pattern="[0-9]*" value="1" oninput="syncQty(this.value)" maxlength="3">
+      </div>
+
+      <label>สถานที่ส่ง</label>
+      <input type="text" id="delivery-place" placeholder="ระบุสถานที่ส่ง" required>
+
+      <label>หมายเหตุ (ไม่บังคับ)</label>
+      <textarea id="note" placeholder="หมายเหตุเพิ่มเติม"></textarea>
+
+      <button class="submit-btn" id="submit-btn" onclick="submitOrder()">✓ บันทึกออเดอร์</button>
+      <button class="cancel-btn" id="cancel-btn" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div id="page-list" class="page">
+    <div id="list-summary-box" class="list-summary"></div>
+    <div class="list-header">
+      <span style="font-size:14px;font-weight:600">รายการออเดอร์ทั้งหมด</span>
+      <button class="clear-btn" onclick="clearAll()">ล้างทั้งหมด</button>
+    </div>
+    <div id="order-list-container"></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="page-calendar" class="page">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-title" id="cal-month-title"></div>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="detail-box" id="day-detail"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let orders = JSON.parse(localStorage.getItem('hamok_orders_v4') || '[]');
+let selectedSize = 'big', selectedPkg = 'khantok', qty = 1;
+let calYear, calMonth, selectedDay = null, editingId = null;
+
+const PKG_LABELS = {khantok:'ขันโตก','box-big':'กล่องใหญ่',box5:'กล่อง 5 กระทง',box2:'กล่อง 2 กระทง',other:'อื่นๆ'};
+const SIZE_LABELS = {big:'กระทงใหญ่',small:'กระทงเล็ก'};
+const THAI_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// Multiplier table: [size][pkg] -> multiplier per qty
+const MULTIPLIERS = {
+  small: { khantok:56, 'box-big':48, box5:5, box2:2, other:1 },
+  big:   { khantok:50, 'box-big':48, box5:5, box2:2, other:1 }
+};
+
+function pieceCount(o){
+  const mult = (MULTIPLIERS[o.size] && MULTIPLIERS[o.size][o.pkg] !== undefined) ? MULTIPLIERS[o.size][o.pkg] : 1;
+  return o.qty * mult;
+}
+
+function save(){ localStorage.setItem('hamok_orders_v4', JSON.stringify(orders)); }
+
+function formatDate(d){
+  const [y,m,day] = d.split('-');
+  return `${parseInt(day)} ${THAI_MONTHS_SHORT[parseInt(m)-1]} ${parseInt(y)+543}`;
+}
+
+function showToast(msg, type='success'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast '+type;
+  setTimeout(()=>{ t.className='toast'; }, 3000);
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  const idx = ['order','list','calendar'].indexOf(t);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('page-'+t).classList.add('active');
+  if(t==='list') renderList();
+  if(t==='calendar') renderCalendar();
+}
+
+function selectSize(s){
+  selectedSize = s;
+  document.getElementById('size-big').classList.toggle('selected', s==='big');
+  document.getElementById('size-small').classList.toggle('selected', s==='small');
+}
+
+function selectPkg(p){
+  selectedPkg = p;
+  ['khantok','box-big','box5','box2','other'].forEach(k=>{
+    document.getElementById('pkg-'+k).classList.toggle('selected', k===p);
+  });
+}
+
+function changeQty(d){
+  qty = Math.max(1, Math.min(999, qty+d));
+  document.getElementById('qty-display').textContent = qty;
+  document.getElementById('qty-input').value = qty;
+}
+
+function syncQty(v){
+  v = v.replace(/[^0-9]/g, '');
+  document.getElementById('qty-input').value = v;
+  qty = Math.max(1, Math.min(999, parseInt(v)||1));
+  document.getElementById('qty-display').textContent = qty;
+}
+
+function submitOrder(){
+  const date = document.getElementById('delivery-date').value;
+  const time = document.getElementById('delivery-time').value;
+  const name = document.getElementById('customer-name').value.trim();
+  const place = document.getElementById('delivery-place').value.trim();
+  const note = document.getElementById('note').value.trim();
+  if(!date){ showToast('กรุณาระบุวันที่ส่ง','error'); return; }
+  if(!time){ showToast('กรุณาระบุเวลาส่ง','error'); return; }
+  if(!name){ showToast('กรุณาระบุชื่อผู้สั่ง','error'); return; }
+  if(!place){ showToast('กรุณาระบุสถานที่ส่ง','error'); return; }
+
+  if(editingId !== null){
+    const idx = orders.findIndex(o=>o.id===editingId);
+    if(idx !== -1){
+      orders[idx] = {...orders[idx], size:selectedSize, qty, pkg:selectedPkg, date, time, name, place, note};
+      save(); showToast('แก้ไขออเดอร์เรียบร้อย ✓'); cancelEdit();
+    }
+  } else {
+    orders.push({id:Date.now(), size:selectedSize, qty, pkg:selectedPkg, date, time, name, place, note});
+    save(); showToast('บันทึกออเดอร์เรียบร้อย ✓'); resetForm();
+  }
+  document.getElementById('list-count').textContent = orders.length;
+}
+
+function resetForm(){
+  document.getElementById('customer-name').value = '';
+  document.getElementById('delivery-place').value = '';
+  document.getElementById('note').value = '';
+  qty = 1; document.getElementById('qty-display').textContent = 1; document.getElementById('qty-input').value = 1;
+  selectSize('big'); selectPkg('khantok');
+}
+
+function startEdit(id){
+  const o = orders.find(x=>x.id===id);
+  if(!o) return;
+  editingId = id;
+  selectSize(o.size);
+  qty = o.qty; document.getElementById('qty-display').textContent = qty; document.getElementById('qty-input').value = qty;
+  selectPkg(o.pkg);
+  document.getElementById('delivery-date').value = o.date;
+  document.getElementById('delivery-time').value = o.time;
+  document.getElementById('customer-name').value = o.name||'';
+  document.getElementById('delivery-place').value = o.place||'';
+  document.getElementById('note').value = o.note||'';
+  document.getElementById('edit-banner').classList.add('show');
+  document.getElementById('submit-btn').textContent = '💾 บันทึกการแก้ไข';
+  document.getElementById('submit-btn').classList.add('edit-mode');
+  document.getElementById('cancel-btn').style.display = 'block';
+  switchTab('order');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function cancelEdit(){
+  editingId = null;
+  document.getElementById('edit-banner').classList.remove('show');
+  document.getElementById('submit-btn').textContent = '✓ บันทึกออเดอร์';
+  document.getElementById('submit-btn').classList.remove('edit-mode');
+  document.getElementById('cancel-btn').style.display = 'none';
+  resetForm();
+}
+
+function deleteOrder(id){
+  if(!confirm('ลบออเดอร์นี้?')) return;
+  if(editingId===id) cancelEdit();
+  orders = orders.filter(o=>o.id!==id); save(); renderList();
+  document.getElementById('list-count').textContent = orders.length;
+}
+
+function clearAll(){
+  if(!confirm('ลบออเดอร์ทั้งหมด?')) return;
+  orders=[]; save(); cancelEdit(); renderList();
+  document.getElementById('list-count').textContent = 0;
+}
+
+function renderList(){
+  const c = document.getElementById('order-list-container');
+  document.getElementById('list-count').textContent = orders.length;
+
+  // Summary box
+  const summaryBox = document.getElementById('list-summary-box');
+  if(!orders.length){
+    summaryBox.innerHTML = '';
+  } else {
+    const totalPieces = orders.reduce((s,o)=>s+pieceCount(o),0);
+    const bigPieces = orders.filter(o=>o.size==='big').reduce((s,o)=>s+pieceCount(o),0);
+    const smallPieces = orders.filter(o=>o.size==='small').reduce((s,o)=>s+pieceCount(o),0);
+    summaryBox.innerHTML = `
+      <div class="list-summary-row"><span>กระทงใหญ่ (รวม)</span><span style="font-weight:600">${bigPieces.toLocaleString()} ใบ</span></div>
+      <div class="list-summary-row"><span>กระทงเล็ก (รวม)</span><span style="font-weight:600">${smallPieces.toLocaleString()} ใบ</span></div>
+      <div class="list-summary-row"><span class="list-summary-total">รวมทั้งหมด</span><span class="list-summary-total">${totalPieces.toLocaleString()} ใบ</span></div>`;
+  }
+
+  if(!orders.length){
+    c.innerHTML = '<div class="empty"><span class="empty-icon">📭</span>ยังไม่มีออเดอร์</div>';
+    return;
+  }
+  const sorted = [...orders].sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  c.innerHTML = sorted.map(o=>`
+    <div class="order-card${editingId===o.id?' editing':''}">
+      <div class="order-info">
+        <div class="order-main">👤 ${o.name}</div>
+        <div class="order-sub">📅 ${formatDate(o.date)} 🕐 ${o.time} น.</div>
+        <div class="order-sub">${SIZE_LABELS[o.size]} × ${o.qty} — ${PKG_LABELS[o.pkg]} <span style="color:#946A00;font-weight:600">(${pieceCount(o).toLocaleString()} ใบ)</span>${o.note?` <span style="color:#1A6FC4;font-style:italic">${o.note}</span>`:''}</div>
+        <div class="order-sub">📍 ${o.place}</div>
+        ${editingId===o.id?'<div style="font-size:11px;color:#534AB7;margin-top:4px;font-weight:600">✏️ กำลังแก้ไข</div>':''}
+      </div>
+      <div class="order-actions">
+        <button class="act-btn edit" onclick="startEdit(${o.id})">✏️ แก้ไข</button>
+        <button class="act-btn del" onclick="deleteOrder(${o.id})">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function getDayOrders(year,month,day){
+  const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  return orders.filter(o=>o.date===dateStr);
+}
+
+function renderCalendar(){
+  const now = new Date();
+  if(calYear===undefined){ calYear=now.getFullYear(); calMonth=now.getMonth(); }
+  document.getElementById('cal-month-title').textContent = `${THAI_MONTHS[calMonth]} ${calYear+543}`;
+  const grid = document.getElementById('cal-grid');
+  const dayNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  let html = dayNames.map(d=>`<div class="cal-header">${d}</div>`).join('');
+  const first = new Date(calYear,calMonth,1).getDay();
+  const total = new Date(calYear,calMonth+1,0).getDate();
+  const prevTotal = new Date(calYear,calMonth,0).getDate();
+  for(let i=0;i<first;i++) html+=`<div class="cal-day other-month"><div class="day-num">${prevTotal-first+i+1}</div></div>`;
+  for(let d=1;d<=total;d++){
+    const dayOs = getDayOrders(calYear,calMonth,d);
+    const bigT = dayOs.filter(o=>o.size==='big').reduce((s,o)=>s+pieceCount(o),0);
+    const smlT = dayOs.filter(o=>o.size==='small').reduce((s,o)=>s+pieceCount(o),0);
+    const isToday = d===now.getDate()&&calMonth===now.getMonth()&&calYear===now.getFullYear();
+    const isSel = selectedDay===d;
+    html+=`<div class="cal-day${isToday?' today':''}${isSel?' selected':''}" onclick="selectDay(${d})">
+      <div class="day-num">${d}</div>
+      ${bigT>0?`<span class="day-badge badge-big">ใหญ่ ${bigT}</span>`:''}
+      ${smlT>0?`<span class="day-badge badge-small">เล็ก ${smlT}</span>`:''}
+      ${dayOs.length>0?`<div class="day-count">${dayOs.length} รายการ</div>`:''}
+    </div>`;
+  }
+  const rem = (7-((first+total)%7))%7;
+  for(let i=1;i<=rem;i++) html+=`<div class="cal-day other-month"><div class="day-num">${i}</div></div>`;
+  grid.innerHTML = html;
+  if(selectedDay) showDayDetail(selectedDay);
+}
+
+function selectDay(d){ selectedDay=d; renderCalendar(); }
+
+function showDayDetail(d){
+  const dayOs = getDayOrders(calYear,calMonth,d);
+  const panel = document.getElementById('day-detail');
+  const dateStr = formatDate(`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+  if(!dayOs.length){
+    panel.innerHTML=`<div class="detail-title">📅 ${dateStr}</div><div style="text-align:center;padding:1rem;color:#6B6B6B;font-size:13px">ไม่มีออเดอร์วันนี้</div>`;
+    panel.classList.add('show'); return;
+  }
+  const bigPieces = dayOs.filter(o=>o.size==='big').reduce((s,o)=>s+pieceCount(o),0);
+  const smlPieces = dayOs.filter(o=>o.size==='small').reduce((s,o)=>s+pieceCount(o),0);
+  const totalPieces = bigPieces + smlPieces;
+  const times = [...new Set(dayOs.map(o=>o.time))].sort();
+  const timeHtml = times.map(t=>{
+    const tOs = dayOs.filter(o=>o.time===t);
+    const tB = tOs.filter(o=>o.size==='big').reduce((s,o)=>s+pieceCount(o),0);
+    const tS = tOs.filter(o=>o.size==='small').reduce((s,o)=>s+pieceCount(o),0);
+    return `<div class="time-block">
+      <div class="time-head">
+        <span class="time-head-label">🕐 ส่ง ${t} น.</span>
+        <span class="time-head-sum">${tB?'ใหญ่ '+tB+'  ':''}${tS?'เล็ก '+tS+'  ':''}รวม ${tB+tS}</span>
+      </div>
+      ${tOs.map(o=>`<div class="time-row"><span>${SIZE_LABELS[o.size]} (${PKG_LABELS[o.pkg]})${o.name?' — '+o.name:''}${o.note?` <span style="color:#1A6FC4;font-style:italic">${o.note}</span>`:''}</span><span style="font-weight:600">${o.qty}×${(MULTIPLIERS[o.size][o.pkg])} = ${pieceCount(o)} ใบ</span></div>`).join('')}
+    </div>`;
+  }).join('');
+  const pkgData = {};
+  dayOs.forEach(o=>{ if(!pkgData[o.pkg]) pkgData[o.pkg]={big:0,small:0}; if(o.size==='big') pkgData[o.pkg].big+=pieceCount(o); else pkgData[o.pkg].small+=pieceCount(o); });
+  const pkgRows = Object.entries(pkgData).map(([k,v])=>`<div class="pkg-row"><span>${PKG_LABELS[k]}</span><span style="color:#6B6B6B">${v.big?'ใหญ่ '+v.big+'  ':''}${v.small?'เล็ก '+v.small+'  ':''}<b>รวม ${v.big+v.small}</b></span></div>`).join('');
+  panel.innerHTML = `
+    <div class="detail-title">📅 ${dateStr}</div>
+    <div class="sum-row">
+      <div class="sum-card"><div class="sum-label">รวมทั้งหมด</div><div class="sum-num">${totalPieces}</div></div>
+      <div class="sum-card" style="background:#EEEDFE"><div class="sum-label" style="color:#534AB7">กระทงใหญ่</div><div class="sum-num" style="color:#3C3489">${bigPieces}</div></div>
+      <div class="sum-card" style="background:#E1F5EE"><div class="sum-label" style="color:#0F6E56">กระทงเล็ก</div><div class="sum-num" style="color:#085041">${smlPieces}</div></div>
+    </div>
+    <div class="section-title">สรุปแยกตามเวลาส่ง</div>${timeHtml}
+    <div class="section-title" style="margin-top:12px">สรุปแยกตามประเภทบรรจุภัณฑ์</div>
+    <div class="pkg-block">${pkgRows}</div>`;
+  panel.classList.add('show');
+}
+
+function changeMonth(d){
+  calMonth+=d;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  selectedDay=null;
+  document.getElementById('day-detail').classList.remove('show');
+  renderCalendar();
+}
+
+// Init
+const now = new Date();
+document.getElementById('delivery-date').value = now.toISOString().split('T')[0];
+document.getElementById('delivery-time').value = '12:00';
+document.getElementById('list-count').textContent = orders.length;
+</script>
+</body>
+</html>
